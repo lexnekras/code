@@ -1057,6 +1057,22 @@ class HotkeyService:
 # ============================================================
 #  Built-in template editor (all Tk operations on the main thread)
 # ============================================================
+def editor_control_shortcut(event, windows: bool):
+    # AltGr also includes Ctrl on Windows; leave it available for text input.
+    if event.state & (0x0008 | 0x20000):
+        return None
+    shortcuts = {
+        "a": "select_all", "c": "copy", "x": "cut", "v": "paste",
+        "z": "undo", "y": "redo", "s": "save",
+    }
+    if windows:
+        # WM_KEYDOWN virtual-key codes are independent of the keyboard layout.
+        key = {65: "a", 67: "c", 88: "x", 86: "v", 90: "z", 89: "y", 83: "s"}.get(event.keycode)
+    else:
+        key = event.keysym.lower()
+    return shortcuts.get(key)
+
+
 class TemplateEditor(tk.Tk):
     def __init__(self, store: TemplateStore, service: HotkeyService, events: queue.Queue):
         super().__init__()
@@ -1071,6 +1087,7 @@ class TemplateEditor(tk.Tk):
         self._registered = set()
         self._failed = {}
         self._poll_id = None
+        self._windows_keyboard = os.name == "nt"
         self.geometry("1100x740")
         self.minsize(930, 680)
         self.configure(background="#F4F6FA")
@@ -1089,7 +1106,7 @@ class TemplateEditor(tk.Tk):
         self._load_text()
         self._refresh_rows()
         self.protocol("WM_DELETE_WINDOW", self.hide_editor)
-        self.bind("<Control-s>", self._save_shortcut)
+        self.bind("<Control-KeyPress>", self._window_control_key)
         self.bind("<Escape>", lambda event: self.hide_editor())
         self._poll_id = self.after(80, self._poll_events)
 
@@ -1102,6 +1119,9 @@ class TemplateEditor(tk.Tk):
         actions.add_command(label="Свернуть в фон", command=self.hide_editor)
         actions.add_command(label="Завершить программу", command=self.exit_program)
         menu.add_cascade(label="Программа", menu=actions)
+        edit = tk.Menu(menu, tearoff=False)
+        self._add_edit_commands(edit)
+        menu.add_cascade(label="Правка", menu=edit)
         self.configure(menu=menu)
 
         container = ttk.Frame(self, padding=20)
@@ -1134,7 +1154,10 @@ class TemplateEditor(tk.Tk):
         ttk.Label(left, text="Пустой шаблон освобождает сочетание клавиш.\nИзменения начинают действовать после сохранения.", wraplength=390).pack(anchor="w", pady=(10, 0))
 
         self.editor_title = tk.StringVar()
-        ttk.Label(right, textvariable=self.editor_title, style="Heading.TLabel").pack(anchor="w", pady=(0, 8))
+        editor_header = ttk.Frame(right)
+        editor_header.pack(fill="x", pady=(0, 8))
+        ttk.Label(editor_header, textvariable=self.editor_title, style="Heading.TLabel").pack(side="left")
+        ttk.Button(editor_header, text="Вставить из буфера", command=self._paste_into_editor).pack(side="right")
         text_frame = ttk.Frame(right)
         text_frame.pack(fill="both", expand=True)
         self.text = tk.Text(text_frame, wrap="word", undo=True, font=("Segoe UI", 11),
@@ -1145,6 +1168,11 @@ class TemplateEditor(tk.Tk):
         scroll.pack(side="right", fill="y")
         self.text.pack(side="left", fill="both", expand=True)
         self.text.bind("<<Modified>>", self._text_changed)
+        self.text.bind("<Control-KeyPress>", self._text_control_key)
+        self.text.bind("<<Paste>>", self._paste_into_editor)
+        self._edit_menu = tk.Menu(self.text, tearoff=False)
+        self._add_edit_commands(self._edit_menu)
+        self.text.bind("<Button-3>", self._show_edit_menu)
 
         ttk.Label(right, text="Вставить подстановку:").pack(anchor="w", pady=(12, 5))
         tokens = ttk.Frame(right)
@@ -1243,9 +1271,78 @@ class TemplateEditor(tk.Tk):
             self._load_text()
             self._refresh_rows()
 
-    def _save_shortcut(self, event):
-        self.save_templates()
+    def _add_edit_commands(self, menu):
+        for label, action, shortcut in (
+            ("Отменить", "undo", "Ctrl+Z"),
+            ("Повторить", "redo", "Ctrl+Y"),
+            ("Вырезать", "cut", "Ctrl+X"),
+            ("Копировать", "copy", "Ctrl+C"),
+            ("Вставить", "paste", "Ctrl+V"),
+            ("Выделить всё", "select_all", "Ctrl+A"),
+        ):
+            menu.add_command(label=label, accelerator=shortcut,
+                             command=lambda value=action: self._edit_action(value))
+
+    def _show_edit_menu(self, event):
+        self.text.focus_set()
+        try:
+            self._edit_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self._edit_menu.grab_release()
         return "break"
+
+    def _paste_into_editor(self, event=None):
+        try:
+            value = self.text.clipboard_get()
+        except tk.TclError:
+            # Some Windows clipboard providers are better handled by pyperclip.
+            try:
+                value = pyperclip.paste() if pyperclip is not None else ""
+            except Exception:
+                value = ""
+        if not value:
+            return "break"
+        self.text.focus_set()
+        self.text.edit_separator()
+        if self.text.tag_ranges("sel"):
+            self.text.replace("sel.first", "sel.last", value)
+        else:
+            self.text.insert("insert", value)
+        self.text.edit_separator()
+        self.text.see("insert")
+        self._commit_text()
+        self._refresh_rows()
+        return "break"
+
+    def _edit_action(self, action):
+        self.text.focus_set()
+        if action == "paste":
+            return self._paste_into_editor()
+        if action == "select_all":
+            self.text.tag_add("sel", "1.0", "end-1c")
+        elif action in ("copy", "cut"):
+            self.text.event_generate("<<Copy>>" if action == "copy" else "<<Cut>>")
+        elif action in ("undo", "redo"):
+            try:
+                self.text.edit_undo() if action == "undo" else self.text.edit_redo()
+            except tk.TclError:
+                pass
+        self._commit_text()
+        self._refresh_rows()
+        return "break"
+
+    def _text_control_key(self, event):
+        action = editor_control_shortcut(event, self._windows_keyboard)
+        if action == "save":
+            self.save_templates()
+            return "break"
+        if action:
+            return self._edit_action(action)
+
+    def _window_control_key(self, event):
+        if editor_control_shortcut(event, self._windows_keyboard) == "save":
+            self.save_templates()
+            return "break"
 
     def save_templates(self):
         self._commit_text()
