@@ -125,7 +125,7 @@ class WindowlessLaunchTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
         self.assertTrue(callable(module.main))
-        self.assertTrue(callable(module.TrayService))
+        self.assertTrue(callable(module.TemplateEditor))
 
     def test_console_python_relaunches_with_pythonw_and_preserves_arguments(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -161,91 +161,6 @@ class WindowlessLaunchTests(unittest.TestCase):
                     m.relaunch_without_console(windows=True)
 
 
-class TrayTests(unittest.TestCase):
-    def setUp(self):
-        self.events = queue.Queue()
-        self.tray = m.TrayService(self.events)
-        self.constants = SimpleNamespace(
-            WM_CLOSE=0x10, WM_COMMAND=0x111, WM_DESTROY=2, WM_NULL=0,
-            WM_LBUTTONUP=0x202, WM_LBUTTONDBLCLK=0x203, WM_RBUTTONUP=0x205,
-            IDI_APPLICATION=32512, MF_STRING=0, MF_SEPARATOR=0x800,
-            TPM_LEFTALIGN=0, TPM_RIGHTBUTTON=2,
-        )
-        self.api = SimpleNamespace(
-            NIF_ICON=2, NIF_MESSAGE=1, NIF_TIP=4, NIM_ADD=0, NIM_DELETE=2,
-            WNDCLASS=SimpleNamespace,
-            RegisterWindowMessage=Mock(return_value=0xC001),
-            RegisterClass=Mock(return_value=1), CreateWindow=Mock(return_value=101),
-            LoadIcon=Mock(return_value=202), Shell_NotifyIcon=Mock(),
-            PumpMessages=Mock(), IsWindow=Mock(return_value=True),
-            DestroyWindow=Mock(), UnregisterClass=Mock(), PostMessage=Mock(),
-            PostQuitMessage=Mock(), DefWindowProc=Mock(return_value=0),
-            CreatePopupMenu=Mock(return_value=303), AppendMenu=Mock(),
-            GetCursorPos=Mock(return_value=(10, 20)), SetForegroundWindow=Mock(),
-            TrackPopupMenu=Mock(), DestroyMenu=Mock(),
-        )
-        for attribute, value in (
-            ('win32gui', self.api), ('win32con', self.constants),
-            ('win32api', SimpleNamespace(GetModuleHandle=Mock(return_value=404))),
-        ):
-            mocked = patch.object(m, attribute, value)
-            mocked.start()
-            self.addCleanup(mocked.stop)
-
-    def test_tray_lifecycle_clicks_restart_and_icon_cleanup(self):
-        def pump():
-            self.assertTrue(self.tray.available)
-            self.tray._window_proc(101, self.tray.CALLBACK_MESSAGE, 1, self.constants.WM_LBUTTONUP)
-            self.tray._window_proc(101, self.constants.WM_COMMAND, self.tray.EXIT_PROGRAM, 0)
-            self.tray._window_proc(101, 0xC001, 0, 0)
-            self.assertTrue(self.tray.available)
-            self.tray._window_proc(101, self.constants.WM_DESTROY, 0, 0)
-            self.api.IsWindow.return_value = False
-        self.api.PumpMessages.side_effect = pump
-        self.tray.start()
-        self.tray.thread.join(timeout=2)
-        self.assertFalse(self.tray.thread.is_alive())
-        self.assertFalse(self.tray.available)
-        calls = self.api.Shell_NotifyIcon.call_args_list
-        self.assertEqual([call.args[0] for call in calls], [0, 0, 2])
-        self.assertIn(('show', None), list(self.events.queue))
-        self.assertIn(('exit', None), list(self.events.queue))
-        self.assertIn(('tray_ready', None), list(self.events.queue))
-        self.assertIn(('tray_stopped', None), list(self.events.queue))
-        self.assertFalse(any(event[0] == 'tray_error' for event in self.events.queue))
-        self.api.UnregisterClass.assert_called_once()
-
-    def test_context_menu_offers_open_and_exit(self):
-        self.tray.hwnd = 101
-        self.tray._window_proc(101, self.tray.CALLBACK_MESSAGE, 1, self.constants.WM_RBUTTONUP)
-        commands = [call.args[2:] for call in self.api.AppendMenu.call_args_list]
-        self.assertIn((self.tray.OPEN_EDITOR, 'Открыть редактор'), commands)
-        self.assertIn((self.tray.EXIT_PROGRAM, 'Выход'), commands)
-        self.api.TrackPopupMenu.assert_called_once()
-        self.api.DestroyMenu.assert_called_once_with(303)
-        self.tray._window_proc(101, self.constants.WM_COMMAND, self.tray.OPEN_EDITOR, 0)
-        self.assertEqual(self.events.get_nowait(), ('show', None))
-
-    def test_native_tray_failure_is_reported_and_cleans_up_window(self):
-        self.api.Shell_NotifyIcon.side_effect = OSError('Explorer недоступен')
-        self.tray._run()
-        self.assertFalse(self.tray.available)
-        self.assertFalse(any(event[0] == 'tray_ready' for event in self.events.queue))
-        self.assertTrue(any(event[0] == 'tray_error' for event in self.events.queue))
-        self.api.DestroyWindow.assert_called_once_with(101)
-        self.api.UnregisterClass.assert_called_once()
-
-    def test_stop_closes_only_the_tray_service_window(self):
-        self.tray.hwnd = 101
-        self.tray.stop()
-        self.assertTrue(self.tray.stop_requested.is_set())
-        self.api.PostMessage.assert_called_once_with(101, self.constants.WM_CLOSE, 0, 0)
-
-    def test_stop_before_start_does_not_create_an_icon(self):
-        self.tray.stop()
-        self.tray._run()
-        self.api.CreateWindow.assert_not_called()
-        self.api.Shell_NotifyIcon.assert_not_called()
 
 
 class ServiceTests(unittest.TestCase):
@@ -309,6 +224,33 @@ class ServiceTests(unittest.TestCase):
         self.assertIn(('stopped', None), events)
         self.assertFalse(any(event[0] == 'error' for event in events))
 
+    def test_hotkey_arriving_after_stop_is_not_dispatched(self):
+        def get_message(pointer, *args):
+            self.service.stop_requested.set()
+            pointer._obj.message = m.WM_HOTKEY
+            pointer._obj.wParam = 1
+            return 1
+        api = SimpleNamespace(
+            PeekMessageW=lambda *args: 0, GetMessageW=get_message,
+            RegisterHotKey=Mock(return_value=1), UnregisterHotKey=Mock(return_value=1),
+        )
+        m.set_templates({'1': 'Текст'})
+        with patch.object(m, 'user32', api), patch.object(m, 'kernel32', SimpleNamespace(GetCurrentThreadId=threading.get_native_id)):
+            self.service.start()
+            self.service.thread.join(timeout=2)
+        self.assertFalse(self.service.thread.is_alive())
+        self.assertFalse(any(event[0] == 'paste' for event in self.events.queue))
+        self.assertEqual(api.UnregisterHotKey.call_count, 5)
+
+    def test_closed_program_does_not_start_new_workers(self):
+        m._shutdown_event.set()
+        self.addCleanup(m._shutdown_event.clear)
+        with patch.object(m.threading, 'Thread') as worker:
+            m.on_hotkey_number('1')
+            m._run_excel_paste_async()
+            m._run_excel_clean_async()
+        worker.assert_not_called()
+
 
 @unittest.skipUnless(os.environ.get('DISPLAY'), 'Tk GUI checks require a display or Xvfb')
 class EditorTests(unittest.TestCase):
@@ -351,6 +293,62 @@ class EditorTests(unittest.TestCase):
         self.editor.text.insert('1.0', text)
         self.settle()
 
+    def close_window(self):
+        # Execute the actual callback registered for the window's close button.
+        self.editor.tk.call(self.editor.protocol('WM_DELETE_WINDOW'))
+
+    def test_editor_is_visible_when_program_starts(self):
+        self.assertEqual(self.editor.state(), 'normal')
+        self.assertTrue(self.editor.winfo_viewable())
+        self.assertFalse(self.editor._closing)
+
+    def test_window_close_stops_program_even_without_reopen_hotkey(self):
+        self.editor._registered.clear()
+        self.close_window()
+        self.assertTrue(self.editor._closing)
+        self.assertTrue(m._shutdown_event.is_set())
+        self.service.stop.assert_called_once()
+        with self.assertRaises(m.tk.TclError):
+            self.editor.winfo_exists()
+
+    def test_cancelled_close_keeps_edits_and_hotkeys_running(self):
+        self.replace_text('Несохранённый текст')
+        with patch.object(m.messagebox, 'askyesnocancel', return_value=None):
+            self.close_window()
+        self.assertTrue(self.editor.winfo_viewable())
+        self.assertFalse(self.editor._closing)
+        self.assertFalse(m._shutdown_event.is_set())
+        self.assertEqual(self.editor._draft['1'], 'Несохранённый текст')
+        self.service.stop.assert_not_called()
+
+    def test_close_saves_changes_before_exiting(self):
+        self.replace_text('Сохранить перед выходом')
+        with patch.object(m.messagebox, 'askyesnocancel', return_value=True):
+            self.close_window()
+        self.assertEqual(self.store.load()['1'], 'Сохранить перед выходом')
+        self.assertTrue(self.editor._closing)
+        self.service.stop.assert_called_once()
+
+    def test_discard_on_close_keeps_saved_templates(self):
+        self.store.save(m.get_templates())
+        self.replace_text('Отбросить правки')
+        with patch.object(m.messagebox, 'askyesnocancel', return_value=False):
+            self.close_window()
+        self.assertEqual(self.store.load()['1'], 'Старый текст')
+        self.assertTrue(self.editor._closing)
+        self.service.stop.assert_called_once()
+
+    def test_failed_save_cancels_window_close(self):
+        self.replace_text('Сохранение недоступно')
+        with patch.object(m.messagebox, 'askyesnocancel', return_value=True), \
+                patch.object(self.store, 'save', side_effect=OSError('Нет доступа')), \
+                patch.object(m.messagebox, 'showerror'):
+            self.close_window()
+        self.assertTrue(self.editor.winfo_viewable())
+        self.assertTrue(self.editor.dirty)
+        self.assertFalse(m._shutdown_event.is_set())
+        self.service.stop.assert_not_called()
+
     def test_edits_survive_switching_slots_and_only_save_publishes_them(self):
         self.replace_text('  Новый\n{clip1}\n')
         self.editor.select_template('2')
@@ -375,26 +373,7 @@ class EditorTests(unittest.TestCase):
         self.assertEqual(m.get_templates()['1'], 'Старый текст')
         self.service.refresh.assert_not_called()
 
-    def test_close_cancel_keeps_window_and_discard_reverts_drafts(self):
-        self.replace_text('Несохранённое')
-        with patch.object(m.messagebox, 'askyesnocancel', return_value=None):
-            self.editor.hide_editor()
-        self.assertNotEqual(self.editor.state(), 'withdrawn')
-        self.assertTrue(self.editor.dirty)
-        with patch.object(m.messagebox, 'askyesnocancel', return_value=False):
-            self.editor.hide_editor()
-        self.assertEqual(self.editor.state(), 'withdrawn')
-        self.assertFalse(self.editor.dirty)
-        self.editor.show_editor()
-        self.settle()
-        self.assertEqual(self.editor.text.get('1.0', 'end-1c'), 'Старый текст')
 
-    def test_close_save_persists_before_hiding(self):
-        self.replace_text('Сохранить перед закрытием')
-        with patch.object(m.messagebox, 'askyesnocancel', return_value=True):
-            self.editor.hide_editor()
-        self.assertEqual(self.editor.state(), 'withdrawn')
-        self.assertEqual(self.store.load()['1'], 'Сохранить перед закрытием')
 
     def test_insert_placeholder_at_cursor(self):
         self.replace_text('Текст: ')
@@ -480,64 +459,18 @@ class EditorTests(unittest.TestCase):
         self.assertIn('Ctrl+2', self.editor.runtime_status.get())
         self.assertEqual(self.editor.template_list.item('2', 'values')[2], 'Клавиши заняты')
 
-    def test_unavailable_reopen_shortcut_keeps_taskbar_access(self):
-        self.editor._registered.discard(100)
-        with patch.object(self.editor, 'iconify') as minimize, patch.object(self.editor, 'withdraw') as hide:
-            self.editor.hide_editor()
-        minimize.assert_called_once()
-        hide.assert_not_called()
 
     def test_exit_saves_and_stops_background_service(self):
         self.replace_text('Сохранено при выходе')
-        tray = SimpleNamespace(available=True, stop=Mock())
-        self.editor.tray = tray
         with patch.object(m.messagebox, 'askyesnocancel', return_value=True):
             self.editor.exit_program()
         self.assertTrue(self.editor._closing)
         self.assertTrue(m._shutdown_event.is_set())
         self.assertEqual(self.store.load()['1'], 'Сохранено при выходе')
         self.service.stop.assert_called_once()
-        tray.stop.assert_called_once()
 
-    def test_tray_can_reopen_editor_when_keyboard_shortcut_is_unavailable(self):
-        self.editor.tray = SimpleNamespace(available=True, stop=Mock())
-        self.editor._registered.clear()
-        self.editor.hide_editor()
-        self.assertEqual(self.editor.state(), 'withdrawn')
-        self.events.put(('show', None))
-        self.settle()
-        self.assertNotEqual(self.editor.state(), 'withdrawn')
 
-    def test_tray_failure_restores_access_to_hidden_editor(self):
-        self.editor.withdraw()
-        self.events.put(('tray_error', 'Не удалось создать значок'))
-        self.events.put(('tray_stopped', None))
-        with patch.object(m.messagebox, 'showwarning') as warning:
-            self.settle()
-            warning.assert_called_once()
-        self.assertNotEqual(self.editor.state(), 'withdrawn')
-        self.assertFalse(self.editor._tray_available)
 
-    def test_start_in_tray_remains_hidden_until_open_command(self):
-        events = queue.Queue()
-        hidden = m.TemplateEditor(self.store, self.service, events,
-                                  tray=SimpleNamespace(available=True, stop=Mock()), start_in_tray=True)
-        try:
-            hidden.update()
-            self.assertEqual(hidden.state(), 'withdrawn')
-            events.put(('tray_ready', None))
-            hidden.after(110, hidden.quit)
-            hidden.mainloop()
-            self.assertEqual(hidden.state(), 'withdrawn')
-            self.assertTrue(hidden._tray_available)
-            events.put(('show', None))
-            hidden.after(110, hidden.quit)
-            hidden.mainloop()
-            self.assertNotEqual(hidden.state(), 'withdrawn')
-        finally:
-            for callback in hidden.tk.splitlist(hidden.tk.call('after', 'info')):
-                hidden.after_cancel(callback)
-            hidden.destroy()
 
 
 if __name__ == '__main__':

@@ -16,11 +16,10 @@ ALL-IN-ONE Hotkeys (Windows)
 
 Общее:
    - Ctrl + Alt + Q  -> выход
-   - Значок в системном трее -> открыть редактор / выход
 
 Запуск без консоли: hotkeys_with_template_editor.pyw (двойной клик).
 Вариант .py автоматически перезапускается через pythonw.exe.
-При запуске редактор скрыт; открыть его можно значком трея или Ctrl+Alt+R.
+Редактор открывается при запуске. Закрытие окна завершает программу и отключает горячие клавиши.
 
 Требования:
   pip install pywin32 pyperclip
@@ -54,9 +53,6 @@ if os.name == "nt":
         import pythoncom
         import pywintypes
         import win32com.client as win32
-        import win32api
-        import win32con
-        import win32gui
         import pyperclip
     except ImportError as exc:
         ctypes.windll.user32.MessageBoxW(
@@ -68,7 +64,6 @@ if os.name == "nt":
 else:
     # Storage and the editor can be tested independently of Windows automation.
     pythoncom = pywintypes = win32 = pyperclip = None
-    win32api = win32con = win32gui = None
 
 
 # ===========================
@@ -257,6 +252,8 @@ def do_paste(num_str: str):
     if not _paste_lock.acquire(blocking=False):
         return
     try:
+        if _shutdown_event.is_set():
+            return
         base = get_templates().get(num_str)
         if not base:
             return
@@ -268,6 +265,8 @@ def do_paste(num_str: str):
         _paste_lock.release()
 
 def on_hotkey_number(num_str: str):
+    if _shutdown_event.is_set():
+        return
     threading.Thread(target=do_paste, args=(num_str,), daemon=True).start()
 
 # ============================================================
@@ -855,6 +854,8 @@ _excel_paste_lock = threading.Lock()
 _excel_clean_lock = threading.Lock()
 
 def _run_excel_paste_async():
+    if _shutdown_event.is_set():
+        return
     if not _excel_paste_lock.acquire(blocking=False):
         return
     def worker():
@@ -867,6 +868,8 @@ def _run_excel_paste_async():
     threading.Thread(target=worker, daemon=True).start()
 
 def _run_excel_clean_async():
+    if _shutdown_event.is_set():
+        return
     if not _excel_clean_lock.acquire(blocking=False):
         return
     def worker():
@@ -1062,7 +1065,7 @@ class HotkeyService:
                 result = user32.GetMessageW(ctypes.byref(message), None, 0, 0)
                 if result == -1:
                     raise ctypes.WinError(ctypes.get_last_error())
-                if result == 0:
+                if result == 0 or self.stop_requested.is_set():
                     break
                 if message.message == WM_REFRESH_HOTKEYS:
                     self._sync()
@@ -1090,146 +1093,6 @@ class HotkeyService:
             self.events.put(("stopped", None))
 
 # ============================================================
-#  Native Windows notification-area icon (no Tk calls from this thread)
-# ============================================================
-class TrayService:
-    CALLBACK_MESSAGE = 0x0400 + 20  # WM_USER + 20
-    OPEN_EDITOR = 1
-    EXIT_PROGRAM = 2
-
-    def __init__(self, events: queue.Queue):
-        self.events = events
-        self.thread = None
-        self.hwnd = None
-        self.available = False
-        self.stop_requested = threading.Event()
-        self._icon_added = False
-        self._icon = None
-        self._taskbar_created = None
-
-    def start(self):
-        self.thread = threading.Thread(target=self._run, name="WindowsTray", daemon=True)
-        self.thread.start()
-
-    def stop(self):
-        self.stop_requested.set()
-        if self.hwnd is not None:
-            try:
-                win32gui.PostMessage(self.hwnd, win32con.WM_CLOSE, 0, 0)
-            except Exception:
-                # The window may already have been destroyed by its own thread.
-                pass
-
-    def _add_icon(self):
-        self.available = False
-        self._icon_added = False
-        flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
-        win32gui.Shell_NotifyIcon(
-            win32gui.NIM_ADD,
-            (self.hwnd, 1, flags, self.CALLBACK_MESSAGE, self._icon, "Hotkeys — мои шаблоны"),
-        )
-        self._icon_added = True
-        self.available = True
-        self.events.put(("tray_ready", None))
-
-    def _remove_icon(self):
-        self.available = False
-        if self._icon_added:
-            self._icon_added = False
-            try:
-                win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, (self.hwnd, 1))
-            except Exception:
-                pass
-
-    def _show_menu(self, hwnd):
-        menu = win32gui.CreatePopupMenu()
-        try:
-            win32gui.AppendMenu(menu, win32con.MF_STRING, self.OPEN_EDITOR, "Открыть редактор")
-            win32gui.AppendMenu(menu, win32con.MF_SEPARATOR, 0, "")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, self.EXIT_PROGRAM, "Выход")
-            x, y = win32gui.GetCursorPos()
-            win32gui.SetForegroundWindow(hwnd)
-            win32gui.TrackPopupMenu(
-                menu, win32con.TPM_LEFTALIGN | win32con.TPM_RIGHTBUTTON,
-                x, y, 0, hwnd, None,
-            )
-            # Required for correct dismissal of notification-area context menus.
-            win32gui.PostMessage(hwnd, win32con.WM_NULL, 0, 0)
-        finally:
-            win32gui.DestroyMenu(menu)
-
-    def _window_proc(self, hwnd, message, wparam, lparam):
-        try:
-            if message == self._taskbar_created:
-                # Explorer recreates its notification area after a restart.
-                self._add_icon()
-                return 0
-            if message == self.CALLBACK_MESSAGE:
-                if lparam in (win32con.WM_LBUTTONUP, win32con.WM_LBUTTONDBLCLK):
-                    self.events.put(("show", None))
-                elif lparam == win32con.WM_RBUTTONUP:
-                    self._show_menu(hwnd)
-                return 0
-            if message == win32con.WM_COMMAND:
-                command = wparam & 0xFFFF
-                if command == self.OPEN_EDITOR:
-                    self.events.put(("show", None))
-                elif command == self.EXIT_PROGRAM:
-                    self.events.put(("exit", None))
-                return 0
-            if message == win32con.WM_DESTROY:
-                self._remove_icon()
-                win32gui.PostQuitMessage(0)
-                return 0
-            return win32gui.DefWindowProc(hwnd, message, wparam, lparam)
-        except Exception as exc:
-            self.events.put(("tray_error", f"Не удалось выполнить команду значка трея:\n{exc}"))
-            return 0
-
-    def _run(self):
-        instance = None
-        class_name = f"HotkeysTemplateTray_{os.getpid()}"
-        registered_class = False
-        try:
-            if self.stop_requested.is_set():
-                return
-            instance = win32api.GetModuleHandle(None)
-            self._taskbar_created = win32gui.RegisterWindowMessage("TaskbarCreated")
-            window_class = win32gui.WNDCLASS()
-            window_class.hInstance = instance
-            window_class.lpszClassName = class_name
-            window_class.lpfnWndProc = self._window_proc
-            win32gui.RegisterClass(window_class)
-            registered_class = True
-            self.hwnd = win32gui.CreateWindow(
-                class_name, "Hotkeys — мои шаблоны", 0,
-                0, 0, 0, 0, 0, 0, instance, None,
-            )
-            # This is a shared system icon; it must not be destroyed by this process.
-            self._icon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
-            if not self.stop_requested.is_set():
-                self._add_icon()
-                win32gui.PumpMessages()
-        except Exception as exc:
-            self.events.put(("tray_error", f"Не удалось создать значок в системном трее:\n{exc}"))
-        finally:
-            self._remove_icon()
-            if self.hwnd is not None:
-                try:
-                    if win32gui.IsWindow(self.hwnd):
-                        win32gui.DestroyWindow(self.hwnd)
-                except Exception:
-                    pass
-                self.hwnd = None
-            if registered_class:
-                try:
-                    win32gui.UnregisterClass(class_name, instance)
-                except Exception:
-                    pass
-            self.events.put(("tray_stopped", None))
-
-
-# ============================================================
 #  Built-in template editor (all Tk operations on the main thread)
 # ============================================================
 def editor_control_shortcut(event, windows: bool):
@@ -1249,16 +1112,11 @@ def editor_control_shortcut(event, windows: bool):
 
 
 class TemplateEditor(tk.Tk):
-    def __init__(self, store: TemplateStore, service: HotkeyService, events: queue.Queue,
-                 tray: TrayService | None = None, start_in_tray: bool = False):
+    def __init__(self, store: TemplateStore, service: HotkeyService, events: queue.Queue):
         super().__init__()
-        if start_in_tray:
-            self.withdraw()
         self.store = store
         self.service = service
         self.events = events
-        self.tray = tray
-        self._tray_available = False
         self._saved = {str(i): get_templates().get(str(i), "") for i in range(1, MAX_TEMPLATES + 1)}
         self._draft = dict(self._saved)
         self._current = "1"
@@ -1285,9 +1143,8 @@ class TemplateEditor(tk.Tk):
         self._build_ui()
         self._load_text()
         self._refresh_rows()
-        self.protocol("WM_DELETE_WINDOW", self.hide_editor)
+        self.protocol("WM_DELETE_WINDOW", self.exit_program)
         self.bind("<Control-KeyPress>", self._window_control_key)
-        self.bind("<Escape>", lambda event: self.hide_editor())
         self._poll_id = self.after(80, self._poll_events)
 
     def _build_ui(self):
@@ -1296,7 +1153,7 @@ class TemplateEditor(tk.Tk):
         actions.add_command(label="Сохранить шаблоны", accelerator="Ctrl+S", command=self.save_templates)
         actions.add_command(label="Импортировать старые шаблоны из Word…", command=self.import_from_word)
         actions.add_separator()
-        actions.add_command(label="Убрать в трей", command=self.hide_editor)
+        actions.add_command(label="Свернуть окно", command=self.iconify)
         actions.add_command(label="Завершить программу", command=self.exit_program)
         menu.add_cascade(label="Программа", menu=actions)
         edit = tk.Menu(menu, tearoff=False)
@@ -1371,10 +1228,9 @@ class TemplateEditor(tk.Tk):
         self.save_button.pack(side="left")
         self.revert_button = ttk.Button(buttons, text="Отменить изменения", command=self.revert_changes)
         self.revert_button.pack(side="left", padx=8)
-        ttk.Button(buttons, text="Убрать в трей", command=self.hide_editor).pack(side="right")
+        ttk.Button(buttons, text="Свернуть окно", command=self.iconify).pack(side="right")
         ttk.Button(buttons, text="Завершить программу", command=self.exit_program).pack(side="right", padx=8)
-        self.tray_status = tk.StringVar(value="Закрытие окна убирает программу в трей. Открыть: значок трея или Ctrl+Alt+R · Выход: Ctrl+Alt+Q")
-        ttk.Label(container, textvariable=self.tray_status, wraplength=1030).pack(anchor="w", pady=(12, 0))
+        ttk.Label(container, text="Горячие клавиши работают, пока окно открыто. Закрытие окна завершает программу.", wraplength=1030).pack(anchor="w", pady=(12, 0))
 
     @property
     def dirty(self):
@@ -1582,14 +1438,6 @@ class TemplateEditor(tk.Tk):
         self._refresh_rows()
         return True
 
-    def hide_editor(self):
-        if self._confirm_unsaved():
-            # A tray icon provides access even if Ctrl+Alt+R is occupied elsewhere.
-            if self._tray_available or (self.tray is not None and self.tray.available) or 100 in self._registered:
-                self.withdraw()
-            else:
-                self.iconify()
-
     def show_editor(self):
         self.deiconify()
         self.lift()
@@ -1602,8 +1450,6 @@ class TemplateEditor(tk.Tk):
         self._closing = True
         _shutdown_event.set()
         self.service.stop()
-        if self.tray is not None:
-            self.tray.stop()
         if self._poll_id:
             self.after_cancel(self._poll_id)
             self._poll_id = None
@@ -1647,16 +1493,6 @@ class TemplateEditor(tk.Tk):
                 elif kind == "stopped" and not self._closing:
                     self.runtime_status.set("Горячие клавиши остановлены. Шаблоны можно редактировать и сохранять; затем перезапустите программу.")
                     self.runtime_label.configure(foreground="#A44800")
-                elif kind == "tray_ready":
-                    self._tray_available = True
-                elif kind == "tray_error":
-                    self._tray_available = False
-                    self.show_editor()
-                    messagebox.showwarning("Значок трея недоступен", payload, parent=self)
-                elif kind == "tray_stopped" and not self._closing:
-                    self._tray_available = False
-                    self.show_editor()
-                    self.tray_status.set("Значок трея недоступен. Окно оставлено открытым; для полного выхода нажмите «Завершить программу».")
         except queue.Empty:
             pass
         if not self._closing:
@@ -1676,23 +1512,18 @@ def main():
     _shutdown_event.clear()
     events = queue.Queue()
     service = HotkeyService(events)
-    tray = TrayService(events)
-    editor = TemplateEditor(store, service, events, tray=tray, start_in_tray=True)
+    editor = TemplateEditor(store, service, events)
     _init_clip_history()
     watcher = threading.Thread(target=_clipboard_watcher, name="ClipboardHistory", daemon=True)
     watcher.start()
-    tray.start()
     service.start()
     try:
         editor.mainloop()
     finally:
         _shutdown_event.set()
         service.stop()
-        tray.stop()
         if service.thread is not None:
             service.thread.join(timeout=2)
-        if tray.thread is not None:
-            tray.thread.join(timeout=2)
         watcher.join(timeout=1)
 
 
