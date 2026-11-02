@@ -252,7 +252,7 @@ class ServiceTests(unittest.TestCase):
         worker.assert_not_called()
 
 
-@unittest.skipUnless(os.environ.get('DISPLAY'), 'Tk GUI checks require a display or Xvfb')
+@unittest.skipUnless(os.name == 'nt' or os.environ.get('DISPLAY'), 'Tk GUI checks require Windows or a display/Xvfb')
 class EditorTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
