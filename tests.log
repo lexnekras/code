@@ -1,0 +1,58 @@
+test_empty_current_clipboard_is_not_old_text (test_hotkeys_editor.ClipboardTests.test_empty_current_clipboard_is_not_old_text) ... ok
+test_fresh_copy_does_not_require_polling_delay (test_hotkeys_editor.ClipboardTests.test_fresh_copy_does_not_require_polling_delay) ... ok
+test_cancelled_close_keeps_edits_and_hotkeys_running (test_hotkeys_editor.EditorTests.test_cancelled_close_keeps_edits_and_hotkeys_running) ... ok
+test_close_saves_changes_before_exiting (test_hotkeys_editor.EditorTests.test_close_saves_changes_before_exiting) ... ok
+test_ctrl_v_pastes_once_and_updates_draft (test_hotkeys_editor.EditorTests.test_ctrl_v_pastes_once_and_updates_draft) ... ok
+test_discard_on_close_keeps_saved_templates (test_hotkeys_editor.EditorTests.test_discard_on_close_keeps_saved_templates) ... ok
+test_edit_menu_copy_cut_and_select_all (test_hotkeys_editor.EditorTests.test_edit_menu_copy_cut_and_select_all) ... ok
+test_editor_is_visible_when_program_starts (test_hotkeys_editor.EditorTests.test_editor_is_visible_when_program_starts) ... ok
+test_edits_survive_switching_slots_and_only_save_publishes_them (test_hotkeys_editor.EditorTests.test_edits_survive_switching_slots_and_only_save_publishes_them) ... ok
+test_empty_clipboard_does_not_delete_selection (test_hotkeys_editor.EditorTests.test_empty_clipboard_does_not_delete_selection) ... ok
+test_exit_saves_and_stops_background_service (test_hotkeys_editor.EditorTests.test_exit_saves_and_stops_background_service) ... ok
+test_failed_save_cancels_window_close (test_hotkeys_editor.EditorTests.test_failed_save_cancels_window_close) ... ok
+test_insert_placeholder_at_cursor (test_hotkeys_editor.EditorTests.test_insert_placeholder_at_cursor) ... ok
+test_paste_replaces_selection_and_can_be_undone (test_hotkeys_editor.EditorTests.test_paste_replaces_selection_and_can_be_undone) ... ok
+test_registration_conflict_and_open_events_reach_ui (test_hotkeys_editor.EditorTests.test_registration_conflict_and_open_events_reach_ui) ... ok
+test_russian_windows_ctrl_v_and_ctrl_s_use_physical_keys (test_hotkeys_editor.EditorTests.test_russian_windows_ctrl_v_and_ctrl_s_use_physical_keys) ... ok
+test_save_failure_keeps_draft_and_active_templates (test_hotkeys_editor.EditorTests.test_save_failure_keeps_draft_and_active_templates) ... ok
+test_window_close_stops_program_even_without_reopen_hotkey (test_hotkeys_editor.EditorTests.test_window_close_stops_program_even_without_reopen_hotkey) ... ok
+test_word_import_is_a_draft_until_saved (test_hotkeys_editor.EditorTests.test_word_import_is_a_draft_until_saved) ... ok
+test_altgr_does_not_trigger_editor_shortcuts (test_hotkeys_editor.KeyboardMappingTests.test_altgr_does_not_trigger_editor_shortcuts) ... ok
+test_windows_shortcuts_ignore_latin_or_russian_layout (test_hotkeys_editor.KeyboardMappingTests.test_windows_shortcuts_ignore_latin_or_russian_layout) ... ok
+test_closed_program_does_not_start_new_workers (test_hotkeys_editor.ServiceTests.test_closed_program_does_not_start_new_workers) ... ok
+test_conflicts_are_reported_per_key (test_hotkeys_editor.ServiceTests.test_conflicts_are_reported_per_key) ... ok
+test_hotkey_arriving_after_stop_is_not_dispatched (test_hotkeys_editor.ServiceTests.test_hotkey_arriving_after_stop_is_not_dispatched) ... ok
+test_message_thread_registers_dispatches_and_unregisters (test_hotkeys_editor.ServiceTests.test_message_thread_registers_dispatches_and_unregisters) ... ok
+test_only_nonempty_templates_reserve_number_keys (test_hotkeys_editor.ServiceTests.test_only_nonempty_templates_reserve_number_keys) ... ok
+test_save_and_clear_update_registrations (test_hotkeys_editor.ServiceTests.test_save_and_clear_update_registrations) ... ok
+test_corrupt_file_is_not_silently_overwritten (test_hotkeys_editor.StorageTests.test_corrupt_file_is_not_silently_overwritten) ... ok
+test_failed_atomic_replace_keeps_previous_file (test_hotkeys_editor.StorageTests.test_failed_atomic_replace_keeps_previous_file) ... ok
+test_import_word_preserves_order_breaks_and_limit (test_hotkeys_editor.StorageTests.test_import_word_preserves_order_breaks_and_limit) ... ok
+test_invalid_data_cannot_replace_saved_file (test_hotkeys_editor.StorageTests.test_invalid_data_cannot_replace_saved_file) ... ok
+test_missing_file_starts_empty (test_hotkeys_editor.StorageTests.test_missing_file_starts_empty) ... ok
+test_unicode_multiline_and_placeholders_survive_restart (test_hotkeys_editor.StorageTests.test_unicode_multiline_and_placeholders_survive_restart) ... ERROR
+test_console_python_relaunches_with_pythonw_and_preserves_arguments (test_hotkeys_editor.WindowlessLaunchTests.test_console_python_relaunches_with_pythonw_and_preserves_arguments) ... ok
+test_frozen_and_non_windows_programs_do_not_relaunch (test_hotkeys_editor.WindowlessLaunchTests.test_frozen_and_non_windows_programs_do_not_relaunch) ... ok
+test_missing_pythonw_is_reported (test_hotkeys_editor.WindowlessLaunchTests.test_missing_pythonw_is_reported) ... ok
+test_pythonw_does_not_start_another_copy (test_hotkeys_editor.WindowlessLaunchTests.test_pythonw_does_not_start_another_copy) ... ok
+test_pyw_is_a_standalone_copy_of_the_tested_program (test_hotkeys_editor.WindowlessLaunchTests.test_pyw_is_a_standalone_copy_of_the_tested_program) ... ok
+
+======================================================================
+ERROR: test_unicode_multiline_and_placeholders_survive_restart (test_hotkeys_editor.StorageTests.test_unicode_multiline_and_placeholders_survive_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\a\code\code\test_hotkeys_editor.py", line 45, in test_unicode_multiline_and_placeholders_survive_restart
+    self.assertEqual(json.loads(self.store.path.read_text())['version'], 1)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x81 in position 61: character maps to <undefined>
+
+----------------------------------------------------------------------
+Ran 38 tests in 8.135s
+
+FAILED (errors=1)

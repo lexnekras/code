@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "D:\a\code\code\.github\build\windows_build.py", line 204, in <module>
+    main()
+  File "D:\a\code\code\.github\build\windows_build.py", line 159, in main
+    raise RuntimeError(f'Windows tests did not pass completely: run={result.testsRun}, skipped={len(result.skipped)}')
+RuntimeError: Windows tests did not pass completely: run=38, skipped=0

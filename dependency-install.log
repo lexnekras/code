@@ -1,0 +1,30 @@
+Collecting pyinstaller==6.16.0 (from -r build-requirements-windows.txt (line 1))
+  Downloading pyinstaller-6.16.0-py3-none-win_amd64.whl (1.4 MB)
+     ---------------------------------------- 1.4/1.4 MB 35.9 MB/s  0:00:00
+Collecting pyinstaller-hooks-contrib==2025.9 (from -r build-requirements-windows.txt (line 2))
+  Downloading pyinstaller_hooks_contrib-2025.9-py3-none-any.whl (444 kB)
+Collecting pywin32==311 (from -r build-requirements-windows.txt (line 3))
+  Downloading pywin32-311-cp312-cp312-win_amd64.whl (9.5 MB)
+     ---------------------------------------- 9.5/9.5 MB 98.2 MB/s  0:00:00
+Collecting pyperclip==1.11.0 (from -r build-requirements-windows.txt (line 4))
+  Downloading pyperclip-1.11.0-py3-none-any.whl (11 kB)
+Collecting altgraph==0.17.4 (from -r build-requirements-windows.txt (line 5))
+  Downloading altgraph-0.17.4-py2.py3-none-any.whl (21 kB)
+Collecting packaging==25.0 (from -r build-requirements-windows.txt (line 6))
+  Downloading packaging-25.0-py3-none-any.whl (66 kB)
+Collecting pefile==2023.2.7 (from -r build-requirements-windows.txt (line 7))
+  Downloading pefile-2023.2.7-py3-none-any.whl (71 kB)
+Collecting pywin32-ctypes==0.2.3 (from -r build-requirements-windows.txt (line 8))
+  Downloading pywin32_ctypes-0.2.3-py3-none-any.whl (30 kB)
+Collecting setuptools==80.9.0 (from -r build-requirements-windows.txt (line 9))
+  Downloading setuptools-80.9.0-py3-none-any.whl (1.2 MB)
+     ---------------------------------------- 1.2/1.2 MB 29.4 MB/s  0:00:00
+Installing collected packages: pywin32, pyperclip, altgraph, setuptools, pywin32-ctypes, pefile, packaging, pyinstaller-hooks-contrib, pyinstaller
+  Attempting uninstall: packaging
+    Found existing installation: packaging 26.3
+    Uninstalling packaging-26.3:
+      Successfully uninstalled packaging-26.3
+
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+pipx 1.18.4 requires packaging>=26.3, but you have packaging 25.0 which is incompatible.
+Successfully installed altgraph-0.17.4 packaging-25.0 pefile-2023.2.7 pyinstaller-6.16.0 pyinstaller-hooks-contrib-2025.9 pyperclip-1.11.0 pywin32-311 pywin32-ctypes-0.2.3 setuptools-80.9.0
