@@ -42,7 +42,7 @@ class StorageTests(unittest.TestCase):
         data = {'1': '  Здравствуйте!\n\n{clip}\t{clip1}\n  ', '9': 'Последний', '2': ''}
         self.store.save(data)
         self.assertEqual(m.TemplateStore(self.store.path).load(), data)
-        self.assertEqual(json.loads(self.store.path.read_text())['version'], 1)
+        self.assertEqual(json.loads(self.store.path.read_text(encoding='utf-8'))['version'], 1)
 
     def test_invalid_data_cannot_replace_saved_file(self):
         self.store.save({'1': 'Сохранено'})
