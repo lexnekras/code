@@ -1,0 +1,115 @@
+187 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
+187 INFO: Python: 3.12.10
+203 INFO: Platform: Windows-2022Server-10.0.20348-SP0
+203 INFO: Python environment: D:\a\code\code\.venv
+203 INFO: wrote D:\a\code\code\build\Hotkeys.spec
+203 INFO: Removing temporary files and cleaning cache in C:\Users\runneradmin\AppData\Local\pyinstaller
+203 INFO: Module search paths (PYTHONPATH):
+['D:\\a\\code\\code',
+ 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python312.zip',
+ 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\DLLs',
+ 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib',
+ 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64',
+ 'D:\\a\\code\\code\\.venv',
+ 'D:\\a\\code\\code\\.venv\\Lib\\site-packages',
+ 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\win32',
+ 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\win32\\lib',
+ 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\Pythonwin',
+ 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\setuptools\\_vendor',
+ 'D:\\a\\code\\code']
+468 INFO: checking Analysis
+468 INFO: Building Analysis because Analysis-00.toc is non existent
+468 INFO: Looking for Python shared library...
+468 INFO: Using Python shared library: C:\hostedtoolcache\windows\Python\3.12.10\x64\python312.dll
+468 INFO: Running Analysis Analysis-00.toc
+468 INFO: Target bytecode optimization level: 0
+468 INFO: Initializing module dependency graph...
+468 INFO: Initializing module graph hook caches...
+484 INFO: Analyzing modules for base_library.zip ...
+1283 INFO: Processing standard module hook 'hook-encodings.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+2315 INFO: Processing standard module hook 'hook-heapq.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+3346 INFO: Processing standard module hook 'hook-pickle.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+4831 INFO: Caching module dependency graph...
+4879 INFO: Analyzing D:\a\code\code\hotkeys_with_template_editor.pyw
+5019 INFO: Processing standard module hook 'hook-xml.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+5035 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+5035 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+5035 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+5552 INFO: Processing standard module hook 'hook-_tkinter.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+5630 INFO: Processing standard module hook 'hook-_ctypes.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+5630 INFO: Processing standard module hook 'hook-pythoncom.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+5708 INFO: Processing standard module hook 'hook-pywintypes.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+5755 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+5802 INFO: Processing standard module hook 'hook-win32com.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+6350 INFO: Processing standard module hook 'hook-platform.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+6365 INFO: Analyzing hidden import 'win32timezone'
+6381 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+6381 INFO: SetuptoolsInfo: initializing cached setuptools info...
+10008 INFO: Setuptools: 'typing_extensions' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.typing_extensions'!
+10008 INFO: Processing standard module hook 'hook-setuptools.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+10023 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10086 INFO: Processing standard module hook 'hook-sysconfig.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+10086 INFO: Processing pre-safe-import-module hook 'hook-jaraco.functools.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10086 INFO: Setuptools: 'jaraco.functools' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.functools'!
+10086 INFO: Processing pre-safe-import-module hook 'hook-more_itertools.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10086 INFO: Setuptools: 'more_itertools' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.more_itertools'!
+10275 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10509 INFO: Processing pre-safe-import-module hook 'hook-jaraco.text.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10509 INFO: Setuptools: 'jaraco.text' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.text'!
+10540 INFO: Processing standard module hook 'hook-setuptools._vendor.jaraco.text.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+10540 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10556 INFO: Processing pre-safe-import-module hook 'hook-jaraco.context.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10556 INFO: Setuptools: 'jaraco.context' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.context'!
+10837 INFO: Processing pre-safe-import-module hook 'hook-backports.tarfile.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10837 INFO: Setuptools: 'backports.tarfile' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.backports.tarfile'!
+10915 INFO: Processing standard module hook 'hook-backports.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+10994 INFO: Processing pre-safe-import-module hook 'hook-importlib_metadata.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+10994 INFO: Setuptools: 'importlib_metadata' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.importlib_metadata'!
+11009 INFO: Processing standard module hook 'hook-setuptools._vendor.importlib_metadata.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+11009 INFO: Processing pre-safe-import-module hook 'hook-zipp.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+11009 INFO: Setuptools: 'zipp' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.zipp'!
+11260 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+11260 INFO: Setuptools: 'tomli' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.tomli'!
+11682 INFO: Processing pre-safe-import-module hook 'hook-wheel.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+11682 INFO: Setuptools: 'wheel' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.wheel'!
+11933 INFO: Processing module hooks (post-graph stage)...
+12433 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+12934 INFO: Processing standard module hook 'hook-difflib.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+13529 INFO: Processing standard module hook 'hook-_tkinter.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+13544 INFO: Performing binary vs. data reclassification (937 entries)
+13984 INFO: Looking for ctypes DLLs
+14015 INFO: Analyzing run-time hooks ...
+14015 INFO: Including run-time hook 'pyi_rth_setuptools.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+14015 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+14015 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+14015 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+14031 INFO: Including run-time hook 'pyi_rth_pywintypes.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+14031 INFO: Including run-time hook 'pyi_rth_pythoncom.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+14031 INFO: Including run-time hook 'pyi_rth__tkinter.py' from 'D:\\a\\code\\code\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+14062 INFO: Creating base_library.zip...
+14078 INFO: Looking for dynamic libraries
+14406 INFO: Extra DLL search directories (AddDllDirectory): []
+14406 INFO: Extra DLL search directories (PATH): []
+15313 WARNING: Library not found: could not resolve 'api-ms-win-core-path-l1-1-0.dll', dependency of 'C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python312.dll'.
+15344 INFO: Warnings written to D:\a\code\code\build\pyinstaller\Hotkeys\warn-Hotkeys.txt
+15376 INFO: Graph cross-reference written to D:\a\code\code\build\pyinstaller\Hotkeys\xref-Hotkeys.html
+15423 INFO: checking PYZ
+15423 INFO: Building PYZ because PYZ-00.toc is non existent
+15423 INFO: Building PYZ (ZlibArchive) D:\a\code\code\build\pyinstaller\Hotkeys\PYZ-00.pyz
+15907 INFO: Building PYZ (ZlibArchive) D:\a\code\code\build\pyinstaller\Hotkeys\PYZ-00.pyz completed successfully.
+15938 INFO: checking PKG
+15938 INFO: Building PKG because PKG-00.toc is non existent
+15938 INFO: Building PKG (CArchive) Hotkeys.pkg
+20944 INFO: Building PKG (CArchive) Hotkeys.pkg completed successfully.
+20960 INFO: Bootloader D:\a\code\code\.venv\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+20960 INFO: checking EXE
+20960 INFO: Building EXE because EXE-00.toc is non existent
+20960 INFO: Building EXE from EXE-00.toc
+20960 INFO: Copying bootloader EXE to D:\a\code\code\windows-output\Hotkeys.exe
+20976 INFO: Copying icon to EXE
+20976 INFO: Copying 0 resources to EXE
+20976 INFO: Embedding manifest in EXE
+20976 INFO: Appending PKG archive to EXE
+20991 INFO: Fixing EXE headers
+21085 INFO: Building EXE from EXE-00.toc completed successfully.
+21101 INFO: Build complete! The results are available in: D:\a\code\code\windows-output

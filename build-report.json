@@ -1,0 +1,23 @@
+{
+  "status": "success",
+  "build_commit": "1a7fe55a8157f417763feebcee920b6c822b8a68",
+  "source_sha256": "f3ce35218394342c323ea3192611b126bdf07888f6db85f4b80472ce497f9f82",
+  "exe_sha256": "c12a4e63ed12712dd18863d8f5213f71626daa0b123eaee49c3a060cd59d6b1a",
+  "exe_size": 18407817,
+  "platform": "Windows-2022Server-10.0.20348-SP0",
+  "python": "3.12.10",
+  "pyinstaller": "6.16.0",
+  "unit_tests_passed": 38,
+  "unit_tests_skipped": 0,
+  "pe": {
+    "machine": "AMD64",
+    "subsystem": "Windows GUI"
+  },
+  "native_gui_smoke": {
+    "window_opened": true,
+    "console_visible": false,
+    "window_close_exits": true,
+    "exit_code": 0,
+    "saved_templates_preserved": true
+  }
+}
